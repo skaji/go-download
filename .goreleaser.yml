@@ -1,0 +1,21 @@
+builds:
+  - main: ./cmd/download
+    binary: download
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+checksum:
+  name_template: 'download-checksums.txt'
+archives:
+  - name_template: "download-{{ .Os }}-{{ .Arch }}"
+    wrap_in_directory: true
+    format_overrides:
+      - goos: windows
+        format: zip
+changelog:
+  sort: asc
