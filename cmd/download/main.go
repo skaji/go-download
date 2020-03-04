@@ -74,6 +74,9 @@ func (p *Package) AlreadyLatestVersion() bool {
 
 func (p *Package) Build() error {
 	f := p.Version.Format
+	if f == "" {
+		return nil
+	}
 	reg, err := regexp.Compile(f)
 	if err != nil {
 		return err
@@ -171,12 +174,17 @@ func (a *App) LatestVersion(p *Package) (string, error) {
 	return "", fmt.Errorf("response does not contain Location Header")
 }
 
+var errSkip = errors.New("skip")
+
 func (a *App) CurrentVersion(p *Package) (string, error) {
+	if p.Version.formatRegexp == nil {
+		return "", errSkip
+	}
 	command := p.Version.Command
 	if _, err := exec.LookPath(command[0]); err != nil {
 		return "", err
 	}
-	out, err := exec.Command(command[0], command[1:]...).Output()
+	out, err := exec.Command(command[0], command[1:]...).CombinedOutput()
 	ress := p.Version.formatRegexp.FindAllStringSubmatch(string(out), -1)
 	if len(ress) == 0 {
 		if err != nil {
@@ -272,6 +280,8 @@ func (a *App) Run(p *Package) error {
 		a.Log(p, "current version is %s", p.Version.current)
 	} else if errors.Is(err, exec.ErrNotFound) {
 		a.Log(p, "not installed")
+	} else if err == errSkip {
+		// noop
 	} else {
 		return err
 	}
@@ -346,10 +356,20 @@ func run(file string) error {
 	return fmt.Errorf("failed to install %s", strings.Join(fails, ", "))
 }
 
+var version = "dev"
+
 func main() {
-	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" {
+	if len(os.Args) < 2 {
+		fmt.Println("too few arguments")
+		os.Exit(1)
+	}
+	if os.Args[1] == "-h" || os.Args[1] == "--help" {
 		fmt.Println("Usage: download packages.yml")
 		os.Exit(1)
+	}
+	if os.Args[1] == "--version" {
+		fmt.Println(version)
+		os.Exit(0)
 	}
 	if err := run(os.Args[1]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
