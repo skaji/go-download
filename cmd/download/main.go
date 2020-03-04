@@ -154,7 +154,7 @@ func NewApp() (*App, error) {
 }
 
 func (a *App) Cleanup() {
-	defer os.RemoveAll(a.workDir)
+	os.RemoveAll(a.workDir)
 }
 
 func (a *App) LatestVersion(p *Package) (string, error) {
