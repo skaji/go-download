@@ -45,22 +45,21 @@ type Package struct {
 	locateBinaryFile   string
 }
 
-func (p *Package) downloadURL(u string, v string) string {
-	n := strings.TrimPrefix(v, "v")
-	u = strings.ReplaceAll(u, "%v", "v"+n)
-	u = strings.ReplaceAll(u, "%n", n)
-	return u
-}
-
 func (p *Package) DownloadURLFor(myos string) string {
 	v := p.Version.latest
 	if p.Version.Fixed != "" {
 		v = p.Version.Fixed
 	}
+	n := strings.TrimPrefix(v, "v")
+	u := p.URL + "/releases/download/"
 	if myos == "linux" {
-		return p.downloadURL(p.DownloadURL.Linux, v)
+		u += p.DownloadURL.Linux
+	} else {
+		u += p.DownloadURL.Mac
 	}
-	return p.downloadURL(p.DownloadURL.Mac, v)
+	u = strings.ReplaceAll(u, "%v", "v"+n)
+	u = strings.ReplaceAll(u, "%n", n)
+	return u
 }
 
 func (p *Package) AlreadyLatestVersion() bool {
